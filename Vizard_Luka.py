@@ -57,80 +57,75 @@ def changeScreen():
 
 '''		
 
-#Paslēpj dialoga paneli, kad tiek nospiesta kāda no apstiprinošajām pogām
-def hideDialog():
-	while True:
-		yield playOptionsDlg.show()
 
-		if playOptionsDlg.accepted:
-			global selectedOption
-			selectedOption = playOptionsDlg.selection
-			return showModeElements(selectedOption)
-			
-		else:
-			return viz.quit()
-	
+def handleGameSetup():
 
-viztask.schedule(hideDialog())		
+    global nickname1, nickname2
 
+    # Izvēlās spēles režīmu
+    yield playOptionsDlg.show()
+    
+    if not playOptionsDlg.accepted:
+        return viz.quit()
 
+    selectedOption = playOptionsDlg.selection
 
+    # Viena spēlētāja režīms
+    if selectedOption == 0:
+        inputBox = vizdlg.InputDialog(prompt='Enter your nickname: ', value='Nickname', length=1.0, validate=validateInput)
+        panel.addItem(inputBox, fontSize=16, padding=16, align=vizdlg.ALIGN_CENTER)
+        
+        yield inputBox.show()
+        if inputBox.accepted:
+            nickname1 = inputBox.value
+            inputBox.visible(False)
+        else:
+            viz.quit()
+            return
 
+    # Divu spēlētāju režīms
+    else:
+        panel.setCellLayout(vizdlg.LAYOUT_HORZ_CENTER)
+        
+        # Pirmais spēlētājs
+        inputBox2 = vizdlg.InputDialog(prompt='Enter first player\'s nickname: ', value='Nickname 1', length=1.0, validate=validateInput)
+        panel.addItem(inputBox2, fontSize=16, padding=16)
+        
+        yield inputBox2.show()
+        if inputBox2.accepted:
+            nickname1 = inputBox2.value
+            inputBox2.visible(False)
+        else:
+            return viz.quit()
+        
+        # Izveidojam otro logu vienu reizi pirms cikla
+        inputBox3 = vizdlg.InputDialog(prompt='Enter second player\'s nickname: ', value='Nickname 2', length=1.0, validate=validateInput)
+        panel.addItem(inputBox3, fontSize=16, padding=16)
+        
+        # cikls, kas turpinās kamēr būs atšķirīgi vārdi
+        while True:
+            yield inputBox3.show()
+            
+            if inputBox3.accepted:
+                if inputBox3.value == nickname1:
+                    inputBox3.error = "Nicknames can't be the same!"
+                else:
+                    nickname2 = inputBox3.value
+                    inputBox3.visible(False)
+                    break
+            else:
+                return viz.quit()
 
-#Parāda izvēletā režīma elementus
-def showModeElements(selectedOption):
-	if selectedOption == 0:
-		
-		inputBox = vizdlg.InputDialog(prompt='Enter your nickname: ', value='Nickname', length=1.0, validate=validateInput)
-		panel.addItem(inputBox, fontSize=16, padding=16, align=vizdlg.ALIGN_CENTER)
-		
-		inputBox.visible(True)
-	else:
-		panel.setCellLayout(vizdlg.LAYOUT_HORZ_CENTER) 
-		global inputBox2
-		global inputBox3
-		
-		inputBox2 = vizdlg.InputDialog(prompt='Enter first player\'s nickname: ', value='Nickname', length=1.0, validate=validateInput)
-		panel.addItem(inputBox2, fontSize=16, padding=16)
-		inputBox3 = vizdlg.InputDialog(prompt='Enter second player\'s nickname: ', value='Nickname 2', length=1.0, validate=validateInput)
-		panel.addItem(inputBox3, fontSize=16, padding=16)
-		
-		inputBox2.visible(True)
-		inputBox3.visible(False)
-		
+viztask.schedule(handleGameSetup())
+
 
 def validateInput(inputBox):
-	global inpBoxValue
-	inpBoxValue = []
-	
-	if inputBox2.accepted or inputBox3.accepted:
-		if len(inputBox.value) <= 10:
-			inpBoxValue.append = inputBox.value
-			if inpBoxValue[0] != inpBoxValue[1]:
-				inputBox3.visible(True)
-				return True
-			else:
-				inputBox.error = 'The nickname doesn\'t meet the requirments'
-				return False
-	else:
-		inputBox.error = 'The nickname doesn\'t meet the requirments'
-		return False
+    if 0 < len(inputBox.value) <= 10:
+        return True
+    else:
+        inputBox.error = 'Nickname must be 1 to 10 characters long'
+        return False
 
-def inputCheck():
-	yield inputBox2.show()
-	nickname1 = inputBox2.value
-	
-	if inputBox2.accepted:
-		inputBox2.visible(False)
-	
-	yield inputBox3.show()
-	nickname2 = inputBox3.value
-	
-	if nickname1 != nickname2:
-		inputBox3.visible(False)
-	else:
-		inputBox3.error= "Nicknames can\'t be the same"
-viztask.schedule(inputCheck())
 
 #def showEnv(bool):
 	
