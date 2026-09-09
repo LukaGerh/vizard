@@ -5,13 +5,10 @@ import vizdlg
 import vizinfo
 import viztask
 import vizinput
+import vizfx
 viz.go(viz.FULLSCREEN)
-'''
-custom_theme = viz.Theme()
-custom_theme.back = [205/255.0, 20/255.0, 20/255.0, 0.8]
 
-viz.setTheme(custom_theme)
-'''
+
 
 #Paneļa izveide
 panel = vizdlg.Panel(layout=vizdlg.LAYOUT_VERT_CENTER, align=vizdlg.ALIGN_CENTER, background=True, border=True, theme=None, drawOrder=1)
@@ -26,36 +23,6 @@ options = ['Single player','Two players']
 playOptionsDlg = vizdlg.AskDialog(prompt, options=options, title = "Choose mode")
 panel.addItem(playOptionsDlg, visible=True)
 
-'''
-NicknameLabel = panel.addItem(viz.addText('Enter first player\'s nickname: '),align=vizdlg.ALIGN_CENTER)
-NicknameLabel2 = panel.addItem(viz.addText('Enter second player\'s nickname: '),align=vizdlg.ALIGN_CENTER)
-inputBox = vizdlg.InputDialog(value='Nickname',length=1.0,validate=None)
-inputBox2 = vizdlg.InputDialog(value='Nickname',length=1.0,validate=None)
-
-panel.addItem(inputBox, fontSize=16, padding=16)
-panel.addItem(inputBox2, fontSize=16, padding=16)
-'''
-'''
-inputBox.drawOrder(2)
-inputBox2.drawOrder(3)
-
-
-playOptionsDlg.visible(True)
-NicknameLabel.visible(False)
-NicknameLabel2.visible(False)
-inputBox.visible(False)
-'''
-'''
-playOptionsDlg.onAccept(changeScreen())
-
-def changeScreen():
-	if  playOptionsDlg.accepted == True:
-		playOptionsDlg.visible(False)
-		NicknameLabel.visible(True)
-		inputBox.visible(True)
-	else:
-
-'''		
 
 
 def handleGameSetup():
@@ -112,7 +79,7 @@ def handleGameSetup():
                 else:
                     nickname2 = inputBox3.value
                     inputBox3.visible(False)
-                    break
+                    return showTwoWindows()
             else:
                 return viz.quit()
 
@@ -126,27 +93,104 @@ def validateInput(inputBox):
         inputBox.error = 'Nickname must be 1 to 10 characters long'
         return False
 
-
-#def showEnv(bool):
-	
-'''
-def checkNicknames():
-	while True:
-		yield inputBox2.show() and inputBox3.show()
-		
-'''	
 	
 
 			
 	
-#vizinput.message('The nicknames doesn\'t meet the requirments')
+def showTwoWindows():
+    
+    panel.remove(True)
+    
+    # 1. Monitora izmēru iegūšana
+    monitors = viz.window.getMonitorList()
+    screen_width, screen_height = monitors[0].size
+    half_width = int(screen_width / 2)
+    
+    window1 = viz.addWindow()
+    window1.setSize([400, 200])
+    window1.setPosition( .50,.50 )
+    
+    
+    # 3. OTRAIS LOGS (Labā puse)
+    window2 = viz.addWindow()
+    window2.setSize([400, 200])
+    window2.setPosition( 400,0 )
+    
+    # OBLIGĀTI: Padarām otro logu redzamu
+    window2.visible(True)
+    window1.visible(True)
 
+    # 4. Skati un 3D vide
+    view2 = viz.addView()
+    window2.setView(view2)
+    
+    # (Pēc izvēles) Paveram kameras nedaudz atstatus, lai var redzēt atšķirību
+    viz.MainView.setPosition([-2, 1.8, -5])
+    view2.setPosition([2, 1.8, -5])
+    
+    # Objekti un gaisma (būs redzami abos logos)
+    vizshape.addPlane(size=(15.0, 15.0))
+    light = vizfx.addDirectionalLight(color=viz.BLUE, euler=(0,90,0))
+    
+    
+    
+    
 
+   
+        
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
+    '''
+    viz.add('tut_ground.wrl')
+    viz.window.setPosition([400,200])
+    
+    
+    
+    window = viz.addWindow()
+    
+    window.setPosition([400, 500])
+    
+    view2 = viz.addView()
+    
+    myScene = viz.addScene()
 
-
-
+    #Make new scene active
+    
+    '''
+        
+    
 '''
+ 
 viz.clearcolor(viz.SKYBLUE)
 
 dir_light = viz.addDirectionalLight()
@@ -187,7 +231,10 @@ startWindow = viz.addWindow()
 chooseName = viz.addText('Ievadi vārdu ludzu')
 
 
-'''
+
 
 if __name__ == "__main__":
-	viz.go()
+        viz.go()
+
+'''
+
