@@ -95,38 +95,42 @@ def validateInput(inputBox):
 
 	
 
-			
-	
+def rotate_right():
+    # Iegūst esošo leņķi un nedaudz to izmaina, vai izmanto relatīvo metodi
+    firstWindowView.setAxisAngle([0, 1, 0, -1], mask=viz.HEAD_ORI, mode=viz.REL_LOCAL)			
+
 def showTwoWindows():
     
     panel.remove(True)
     
-    # 1. Monitora izmēru iegūšana
-    monitors = viz.window.getMonitorList()
-    screen_width, screen_height = monitors[0].size
-    half_width = int(screen_width / 2)
+    def rotate_right():
+        # Iegūst esošo leņķi un nedaudz to izmaina, vai izmanto relatīvo metodi
+        firstWindowView.setAxisAngle([0, 1, 0, -1], mask=viz.HEAD_ORI, mode=viz.REL_LOCAL)		
     
-    window1 = viz.addWindow()
-    window1.setSize([400, 200])
-    window1.setPosition( .50,.50 )
+    firstWindowView = viz.addView()
+    firstWindow = viz.addWindow()
+    firstWindow.setSize([0.5, 1])
+    firstWindow.setPosition( 0,1 )
+    firstWindow.setView(firstWindowView)
     
+    secondWindowView = viz.addView()
+    secondWindow = viz.addWindow()
+    secondWindow.setSize([0.5, 1])
+    secondWindow.setPosition( 0.5, 1 )
+    secondWindow.setView(secondWindowView)
     
-    # 3. OTRAIS LOGS (Labā puse)
-    window2 = viz.addWindow()
-    window2.setSize([400, 200])
-    window2.setPosition( 400,0 )
-    
-    # OBLIGĀTI: Padarām otro logu redzamu
-    window2.visible(True)
-    window1.visible(True)
 
-    # 4. Skati un 3D vide
-    view2 = viz.addView()
-    window2.setView(view2)
+    vizact.whilekeydown('w', firstWindowView.move, [0, 0, 0.1])
+    vizact.whilekeydown('s', firstWindowView.move, [0, 0, -0.1])
     
-    # (Pēc izvēles) Paveram kameras nedaudz atstatus, lai var redzēt atšķirību
-    viz.MainView.setPosition([-2, 1.8, -5])
-    view2.setPosition([2, 1.8, -5])
+    #vajag degrees
+    vizact.whilekeydown('d', firstWindowView.move,[0, 0, 0.1])
+   
+    vizact.whilekeydown(viz.KEY_UP, secondWindowView.move, [0, 0, 0.1])
+    vizact.whilekeydown(viz.KEY_DOWN, secondWindowView.move, [0, 0, -0.1])
+  
+
+
     
     # Objekti un gaisma (būs redzami abos logos)
     vizshape.addPlane(size=(15.0, 15.0))
@@ -134,9 +138,21 @@ def showTwoWindows():
     
     
     
-    
 
-   
+
+def createObjects():
+    light = vizfx.addDirectionalLight(color=viz.BLUE, euler=(0,90,0))
+    vizshape.addPlane(size=(15.0, 15.0))
+    
+    
+    
+    vizshape.addSphere(	 
+    radius = 1.0,	 
+    slices = 20, 
+    stacks = 20,	 
+    axis = vizshape.AXIS_Y	 
+    )
+    
         
     
     
