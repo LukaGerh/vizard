@@ -6,7 +6,10 @@ import vizinfo
 import viztask
 import vizinput
 import vizfx
+import random
+import vizmat
 viz.go(viz.FULLSCREEN)
+
 
 
 
@@ -46,6 +49,7 @@ def handleGameSetup():
         if inputBox.accepted:
             nickname1 = inputBox.value
             inputBox.visible(False)
+            showOneWindow()
         else:
             viz.quit()
             return
@@ -93,65 +97,145 @@ def validateInput(inputBox):
         inputBox.error = 'Nickname must be 1 to 10 characters long'
         return False
 
-	
 
-def rotate_right():
-    # Iegūst esošo leņķi un nedaudz to izmaina, vai izmanto relatīvo metodi
-    firstWindowView.setAxisAngle([0, 1, 0, -1], mask=viz.HEAD_ORI, mode=viz.REL_LOCAL)			
+
+
+
+
+def showOneWindow():
+    panel.remove()
+
+
 
 def showTwoWindows():
     
-    panel.remove(True)
-    
-    def rotate_right():
-        # Iegūst esošo leņķi un nedaudz to izmaina, vai izmanto relatīvo metodi
-        firstWindowView.setAxisAngle([0, 1, 0, -1], mask=viz.HEAD_ORI, mode=viz.REL_LOCAL)		
-    
+    panel.remove()
+       	
+    global firstWindowView, secondWindowView
     firstWindowView = viz.addView()
+    firstWindowView.setPosition([0, 0.5, -18], mode=viz.REL_PARENT)
     firstWindow = viz.addWindow()
     firstWindow.setSize([0.5, 1])
     firstWindow.setPosition( 0,1 )
     firstWindow.setView(firstWindowView)
     
+    
     secondWindowView = viz.addView()
+    secondWindowView.setPosition([0, 0.5, -18], mode=viz.REL_PARENT)
     secondWindow = viz.addWindow()
     secondWindow.setSize([0.5, 1])
     secondWindow.setPosition( 0.5, 1 )
     secondWindow.setView(secondWindowView)
     
+    
+    
+    
+    TURN_SPEED = 60
+    
+    def update_view():
+        if viz.key.isDown('d'):
+            firstWindowView.setEuler([TURN_SPEED * viz.elapsed(), 0, 0], viz.BODY_ORI, viz.REL_PARENT)
+        elif viz.key.isDown('a'):
+            firstWindowView.setEuler([-TURN_SPEED * viz.elapsed(), 0, 0], viz.BODY_ORI, viz.REL_PARENT)
+        elif viz.key.isDown(viz.KEY_RIGHT):
+            secondWindowView.setEuler([TURN_SPEED * viz.elapsed(), 0, 0], viz.BODY_ORI, viz.REL_PARENT)
+        elif viz.key.isDown(viz.KEY_LEFT):
+            secondWindowView.setEuler([-TURN_SPEED * viz.elapsed(), 0, 0], viz.BODY_ORI, viz.REL_PARENT)
 
+
+    vizact.ontimer(0, update_view)
+    
+    
+    
+    
     vizact.whilekeydown('w', firstWindowView.move, [0, 0, 0.1])
     vizact.whilekeydown('s', firstWindowView.move, [0, 0, -0.1])
-    
-    #vajag degrees
-    vizact.whilekeydown('d', firstWindowView.move,[0, 0, 0.1])
+
    
     vizact.whilekeydown(viz.KEY_UP, secondWindowView.move, [0, 0, 0.1])
     vizact.whilekeydown(viz.KEY_DOWN, secondWindowView.move, [0, 0, -0.1])
   
 
+    createObjects()
+    
+    
+    
+    
+    
+    
+    
+firstWindowView = None
+secondWindowView = None    
+balls = []
 
-    
-    # Objekti un gaisma (būs redzami abos logos)
-    vizshape.addPlane(size=(15.0, 15.0))
-    light = vizfx.addDirectionalLight(color=viz.BLUE, euler=(0,90,0))
-    
-    
-    
 
 
 def createObjects():
+    plane = vizshape.addPlane(size=(25.0, 25.0))
+    plane.setPosition( 0, 0, 0 )
     light = vizfx.addDirectionalLight(color=viz.BLUE, euler=(0,90,0))
-    vizshape.addPlane(size=(15.0, 15.0))
     
+
     
+    global balls
+    balls = []
+
+    def randomPosElements():
     
-    vizshape.addSphere(	 
-    radius = 1.0,	 
-    slices = 20, 
-    stacks = 20,	 
-    axis = vizshape.AXIS_Y	 
-    )
+        #firstViewXZ = firstViewPos[0]
+        
+        for i in range(4):
+            xCoordinate = random.randint(-12, 12)
+            zCoordinate = random.randint(-12, 12)
+            ball = vizshape.addSphere(	 
+            radius = 1.0,	 
+            slices = 20, 
+            stacks = 20,	 
+            axis = vizshape.AXIS_Y	 
+            )
+            ball.setPosition(xCoordinate, 0.5, zCoordinate)
+            ball.setScale(0.5,0.5,0.5)
+            balls.append(ball)
+            '''
+            ballPosition = ball.getPosition()
+            ballsPos.append(ballPosition)
+            '''
+    randomPosElements()
+        
+        
+def checkDistance():
+    global firstWindowView,secondWindowView, balls
+    if firstWindowView == None or secondWindowView == None:
+        return
+        
+    currentFirstViewPos = firstWindowView.getPosition()
+    currentSecondViewPos = secondWindowView.getPosition()
+        
+    for ball in balls[:]:
+        ballPos = ball.getPosition()
+        distanceFirst = vizmat.Distance(currentFirstViewPos, ballPos)
+        distanceSecond = vizmat.Distance(currentSecondViewPos, ballPos)
+            
+        if distanceFirst <= 1.0:
+            ball.remove()      
+            balls.remove(ball)
+        elif distanceSecond <= 1.0:    
+            ball.remove()      
+            balls.remove(ball)
+            
+            
+            '''
+        for ballPos in ballsPos[:]:
+            distance = vizmat.Distance(firstViewPos, ballPos)
+            if distance <= 1.0:
+                balls[ballPos].remove()
+                
+            else:
+                print('all good')
+            
+            '''
+            
+vizact.ontimer(0, checkDistance)
     
         
     
@@ -186,7 +270,14 @@ def createObjects():
     
     
 
-    '''
+'''
+
+for ball in balls[:]:
+            ballPos = ball.getPosition()
+            ballsPos.append(ballPos)
+
+
+
     viz.add('tut_ground.wrl')
     viz.window.setPosition([400,200])
     
