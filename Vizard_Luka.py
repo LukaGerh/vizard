@@ -11,6 +11,10 @@ import vizmat
 viz.go(viz.FULLSCREEN)
 
 
+viz.mouse.setOverride(	 
+    state = viz.ON	 
+)
+
 
 
 
@@ -26,16 +30,24 @@ options = ['Single player','Two players']
 playOptionsDlg = vizdlg.AskDialog(prompt, options=options, title = "Choose mode")
 panel.addItem(playOptionsDlg, visible=True)
 
+singlePlayer = False
+multiPlayer = False
 
 firstWindowView = None
 secondWindowView = None    
+
+pointCount = 0
+pointCount2 = 0
+pointCount3 = 0
 balls = []
+cylinders = []
+cubes = []
 
 
 
 def handleGameSetup():
 
-    global nickname1, nickname2
+    global nickname1, nickname2#, nickname3
 
     
     yield playOptionsDlg.show()
@@ -47,14 +59,14 @@ def handleGameSetup():
 
     
     if selectedOption == 0:
-        inputBox = vizdlg.InputDialog(prompt='Enter your nickname: ', value='Nickname', length=1.0, validate=validateInput)
+        inputBox = vizdlg.InputDialog(prompt='Enter your nickname: ', value='Player', length=1.0, validate=validateInput)
         panel.addItem(inputBox, fontSize=16, padding=16, align=vizdlg.ALIGN_CENTER)
         
         yield inputBox.show()
         if inputBox.accepted:
             nickname1 = inputBox.value
             inputBox.visible(False)
-            showOneWindow()
+            showOneWindow(nickname1)
         else:
             viz.quit()
             return
@@ -64,7 +76,7 @@ def handleGameSetup():
         panel.setCellLayout(vizdlg.LAYOUT_HORZ_CENTER)
         
         
-        inputBox2 = vizdlg.InputDialog(prompt='Enter first player\'s nickname: ', value='Nickname 1', length=1.0, validate=validateInput)
+        inputBox2 = vizdlg.InputDialog(prompt='Enter first player\'s nickname: ', value='Player 1', length=1.0, validate=validateInput)
         panel.addItem(inputBox2, fontSize=16, padding=16)
         
         yield inputBox2.show()
@@ -75,7 +87,7 @@ def handleGameSetup():
             return viz.quit()
         
         
-        inputBox3 = vizdlg.InputDialog(prompt='Enter second player\'s nickname: ', value='Nickname 2', length=1.0, validate=validateInput)
+        inputBox3 = vizdlg.InputDialog(prompt='Enter second player\'s nickname: ', value='Player 2', length=1.0, validate=validateInput)
         panel.addItem(inputBox3, fontSize=16, padding=16)
         
 
@@ -88,7 +100,7 @@ def handleGameSetup():
                 else:
                     nickname2 = inputBox3.value
                     inputBox3.visible(False)
-                    showTwoWindows()
+                    showTwoWindows(nickname1, nickname2)
                     return
             else:
                 viz.quit()
@@ -108,10 +120,54 @@ def validateInput(inputBox):
 
 
 
-def showOneWindow():
+def showOneWindow(nickname):
     panel.remove()
-    viz.MainView.setPosition([0, 0.5, -18], mode=viz.REL_PARENT)
     
+    viz.MainView.collision(viz.ON)
+    
+    monitor = viz.window.getMonitorList()
+    monitorTop = monitor[0].size[1]
+    monitorWidth = monitor[0].size[0]
+    textY = monitorTop - 30
+    textX = monitorWidth - 30
+    
+    global singlePlayer, pointCount
+    
+    singlePlayer = True
+    
+    viz.MainView.setPosition([0, 0.5, 0], mode=viz.REL_PARENT)
+    
+    playerLabel = viz.addText(	 
+        value = 'Spēlētājs: ' + nickname,	 
+        parent = viz.ORTHO, 
+        scene = viz.MainWindow	 
+    )
+    playerLabel.color(0, 0, 0)
+    playerLabel.fontSize(
+        size = 30
+    )
+    
+    playerLabel.alignment(viz.ALIGN_LEFT_TOP)
+    playerLabel.setPosition(30,textY)
+    
+    
+    pointsCollected = viz.addText(
+        value = 'Punkti: ' + str(pointCount),	 
+        parent = viz.ORTHO, 
+        scene = viz.MainWindow	 
+    )
+    pointsCollected.color(0, 0, 0)
+    pointsCollected.alignment(viz.ALIGN_RIGHT_TOP)
+    pointsCollected.setPosition(textX,textY)
+    pointsCollected.fontSize(
+            size = 30
+    )
+    def collectedPoints():
+    
+        
+        pointsCollected.message('Punkti: ' + str(pointCount))
+        
+    vizact.ontimer(0, collectedPoints)
     
     TURN_SPEED = 60
     
@@ -124,19 +180,36 @@ def showOneWindow():
             viz.MainView.setEuler([TURN_SPEED * viz.elapsed(), 0, 0], viz.BODY_ORI, viz.REL_PARENT)
         elif viz.key.isDown(viz.KEY_LEFT):
             viz.MainView.setEuler([-TURN_SPEED * viz.elapsed(), 0, 0], viz.BODY_ORI, viz.REL_PARENT)
+        
+    vizact.whilekeydown('w', viz.MainView.move, [0, 0, 0.1])
+    vizact.whilekeydown('s', viz.MainView.move, [0, 0, -0.1])
 
+   
+    vizact.whilekeydown(viz.KEY_UP, viz.MainView.move, [0, 0, 0.1])
+    vizact.whilekeydown(viz.KEY_DOWN, viz.MainView.move, [0, 0, -0.1])
     
     vizact.ontimer(0, update_main_view)
     createObjects()
 
 
-def showTwoWindows():
-    
+def showTwoWindows(nickname1, nickname2):
     panel.remove()
+    
+    monitor = viz.window.getMonitorList()
+    monitorTop = monitor[0].size[1]
+    monitorWidth = monitor[0].size[0] / 2
+    textY = monitorTop - 30
+    textX = monitorWidth - 30
+    
+    
+    
+    
+    global multiPlayer, pointCount2, pointCount3
+    multiPlayer = True
        	
     global firstWindowView, secondWindowView
     firstWindowView = viz.addView()
-    firstWindowView.setPosition([0, 0.5, -18], mode=viz.REL_PARENT)
+    firstWindowView.setPosition([0, 0.5, 0], mode=viz.REL_PARENT)
     firstWindow = viz.addWindow()
     firstWindow.setSize([0.5, 1])
     firstWindow.setPosition( 0,1 )
@@ -144,13 +217,72 @@ def showTwoWindows():
     
     
     secondWindowView = viz.addView()
-    secondWindowView.setPosition([0, 0.5, -18], mode=viz.REL_PARENT)
+    secondWindowView.setPosition([0, 0.5, 0], mode=viz.REL_PARENT)
+    secondWindowView.setEuler(180, 0, 0)
     secondWindow = viz.addWindow()
     secondWindow.setSize([0.5, 1])
     secondWindow.setPosition( 0.5, 1 )
     secondWindow.setView(secondWindowView)
     
     
+    playerLabel = viz.addText(	 
+        value = 'Spēlētājs: ' + nickname1,	 
+        parent = viz.ORTHO, 
+        scene = firstWindow	 
+    )
+    
+    playerLabel.fontSize(
+        size = 30
+    )
+    playerLabel.alignment(viz.ALIGN_LEFT_TOP)
+    playerLabel.setPosition(30,textY)
+    playerLabel.color(0, 0, 0)
+    
+    playerLabel2 = viz.addText(	 
+        value = 'Spēlētājs: ' + nickname2,	 
+        parent = viz.ORTHO, 
+        scene = secondWindow	 
+    )
+    
+    playerLabel2.fontSize(
+        size = 30
+    )
+    playerLabel2.alignment(viz.ALIGN_LEFT_TOP)
+    playerLabel2.setPosition(30,textY)
+    playerLabel2.color(0, 0, 0)
+    
+    
+    
+    
+    pointsCollected = viz.addText(
+        value = 'Punkti: ' + str(pointCount2),	 
+        parent = viz.ORTHO, 
+        scene = firstWindow	 
+    )
+    pointsCollected.color(0, 0, 0)
+    pointsCollected.alignment(viz.ALIGN_RIGHT_TOP)
+    pointsCollected.setPosition(textX,textY)
+    pointsCollected.fontSize(
+            size = 30
+    )
+    pointsCollected2 = viz.addText(
+        value = 'Punkti: ' + str(pointCount3),	 
+        parent = viz.ORTHO, 
+        scene = secondWindow 
+    )
+    pointsCollected2.color(0, 0, 0)
+    pointsCollected2.alignment(viz.ALIGN_RIGHT_TOP)
+    pointsCollected2.setPosition(textX,textY)
+    pointsCollected2.fontSize(
+            size = 30
+    )
+    def collectedPoints():
+    
+        
+        pointsCollected.message('Punkti: ' + str(pointCount2))
+        pointsCollected2.message('Punkti: ' + str(pointCount3))
+        
+    vizact.ontimer(0, collectedPoints)
     
     
     TURN_SPEED = 60
@@ -186,11 +318,101 @@ def showTwoWindows():
 
 
 def createObjects():
-    plane = vizshape.addPlane(size=(25.0, 25.0))
-    plane.setPosition( 0, 0, 0 )
     light = vizfx.addDirectionalLight(color=viz.BLUE, euler=(0,90,0))
+    
+    floor = vizshape.addPlane(size=(25.0, 25.0))
+    floor.disable(viz.COLLISION)
+    floor.setPosition( 0, 0, 0 )
+    floor.color(145, 145, 145)
+    #floor.setEuler(180, 0, 0)
+    ceiling = vizshape.addPlane(size=(25.0, 25.0))
+    ceiling.setPosition(0, 6.0, 0)
+    ceiling.setEuler(	 
+        [0,0,180],	 
+        mode = viz.ABS_GLOBAL
+    )
+    ceiling.color([255, 255, 255],
+        node = '',
+        op = viz.OP_DEFAULT
+    )
+    
+    
+    sidePlane1 = vizshape.addPlane(	 
+        size = [25.0,6.0],	 
+        axis = vizshape.AXIS_Z,	 
+        cullFace = False  
+    )
+    sidePlane1.collideMesh()
+    
+    
+    sidePlane1.setPosition(	 
+        [0,3.0,-12.5],	 
+        mode = viz.REL_PARENT
+    )
+    sidePlane1.color(	 
+        [0, 255, 0],
+        node = '',
+        op = viz.OP_DEFAULT
+    )
+    
+    
+    sidePlane2 = vizshape.addPlane(	 
+        size = [25.0,6.0],	 
+        axis = vizshape.AXIS_X,	 
+        cullFace = False  
+    )
+    sidePlane2.collideMesh()
+    sidePlane2.setPosition(	 
+        [-12.5,3.0,0],	 
+        mode = viz.ABS_GLOBAL
+    )
+    sidePlane2.color(	 
+        [128, 0, 128],
+    )
+    
+    
+    sidePlane3 = vizshape.addPlane(	 
+        size = [25.0,6.0],	 
+        axis = vizshape.AXIS_Z,	 
+        cullFace = False  
+    )
+    sidePlane3.collideMesh()
+    sidePlane3.setPosition(	 
+        [0,3.0,12.5],	 
+        mode = viz.ABS_GLOBAL
+    )
+    sidePlane3.setEuler(	 
+        [0,180,0],	 
+        mode = viz.ABS_GLOBAL
+    )
+    sidePlane3.color(	 
+        [255, 165, 0],
+    )
+    
+    
+    sidePlane4 = vizshape.addPlane(
+        size = [25.0,6.0],	 
+        axis = vizshape.AXIS_X,	 
+        cullFace = False  
+    )
+    sidePlane4.collideMesh()
+    sidePlane4.setPosition(	 
+        [12.5,3.0,0],	 
+        mode = viz.ABS_GLOBAL
+    )
+    sidePlane4.setEuler(	 
+        [180,0,0],	 
+        mode = viz.ABS_GLOBAL
+    )
+    sidePlane4.color(	 
+        [255, 0, 0],
+    )
+    
+
+    #light = vizfx.addDirectionalLight(color=viz.WHITE, euler=(0,90,0))
+    #light.setPosition(0, 3, 0)
         
-    global balls
+    global balls, cylinders, cubes
     
     def randomPosElements():
             
@@ -206,38 +428,184 @@ def createObjects():
                 ball.setPosition(xCoordinate, 0.5, zCoordinate)
                 ball.setScale(0.5,0.5,0.5)
                 balls.append(ball)
+                ball.disable(viz.COLLISION)
+        for i in range(2):
+                xCoordinate = random.randint(-12, 12)  # <-- PIEVIENOT ŠO
+                zCoordinate = random.randint(-12, 12)  # <-- PIEVIENOT ŠO
+                cylinder = vizshape.addCylinder(	 
+                height = 1.0,	 
+                radius = 0.5,	 
+                topRadius = None,	 
+                bottomRadius = None, 
+                axis = vizshape.AXIS_Y,	 
+                slices = 20,	 
+                bottom = True,	 
+                top = True, 
+                )
+                cylinder.setPosition(xCoordinate, 0.5, zCoordinate)
+                cylinder.setScale(0.5,0.5,0.5)
+                cylinders.append(cylinder)
+                cylinder.disable(viz.COLLISION)
+        for i in range(1):
+                xCoordinate = random.randint(-12, 12)
+                zCoordinate = random.randint(-12, 12)
+                cube = vizshape.addCube(	 
+                size = 1	 
+                )
+                cube.setPosition(xCoordinate, 0.5, zCoordinate)
+                cube.setScale(0.5,0.5,0.5)
+                cubes.append(cube)
+                cube.disable(viz.COLLISION)
+    
                
     randomPosElements()
 
        
         
 def checkDistance():
-    global firstWindowView,secondWindowView, balls
-    if firstWindowView == None or secondWindowView == None:
+    global singlePlayer, multiPlayer, firstWindowView, secondWindowView, pointCount, pointCount2, pointCount3, balls, cylinders, cubes
+    
+    if singlePlayer == True: 
+        mainViewPos = viz.MainView.getPosition()
+        
+        for ball in balls[:]:
+            ballPos = ball.getPosition()
+            distanceMain = vizmat.Distance(mainViewPos, ballPos)
+            if distanceMain <= 1.0:
+                pointCount += 1
+                ball.remove()      
+                balls.remove(ball)
+                additionalElement("ball")  
+
+       
+        for cylinder in cylinders[:]:
+            cylinderPos = cylinder.getPosition()
+            distanceMain = vizmat.Distance(mainViewPos, cylinderPos)
+            if distanceMain <= 1.0:
+                pointCount += 2
+                cylinder.remove()      
+                cylinders.remove(cylinder)
+                additionalElement("cylinder")  
+
+        
+        for cube in cubes[:]:
+            cubePos = cube.getPosition()
+            distanceMain = vizmat.Distance(mainViewPos, cubePos)
+            if distanceMain <= 1.0:
+                pointCount += 3
+                cube.remove()      
+                cubes.remove(cube)
+                additionalElement("cube")
+                
+        
+    elif multiPlayer == True:
+        
+        currentFirstViewPos = firstWindowView.getPosition()
+        currentSecondViewPos = secondWindowView.getPosition()
+        
+            
+        for ball in balls[:]:
+            ballPos = ball.getPosition()
+            
+            distanceFirst = vizmat.Distance(currentFirstViewPos, ballPos)
+            distanceSecond = vizmat.Distance(currentSecondViewPos, ballPos)
+            
+                
+            if distanceFirst <= 1.0:
+                ball.remove()      
+                balls.remove(ball)
+                pointCount2+= 1
+                additionalElement("ball")
+            elif distanceSecond <= 1.0:    
+                ball.remove()      
+                balls.remove(ball)
+                pointCount3+= 1
+                additionalElement("ball")
+        for cylinder in cylinders[:]:
+            cylinderPos = cylinder.getPosition()
+            
+            distanceFirst = vizmat.Distance(currentFirstViewPos, cylinderPos)
+            distanceSecond = vizmat.Distance(currentSecondViewPos, cylinderPos)
+            
+                
+            if distanceFirst <= 1.0:
+                cylinder.remove()      
+                cylinders.remove("cylinder")
+                pointCount2+= 2
+                additionalElement("cylinder")
+            elif distanceSecond <= 1.0:    
+                cylinder.remove()      
+                cylinders.remove(cylinder)
+                pointCount3+= 2
+                additionalElement(cylinder)
+        for cube in cubes[:]:
+            cubePos = cube.getPosition()
+            
+            distanceFirst = vizmat.Distance(currentFirstViewPos, cubePos)
+            distanceSecond = vizmat.Distance(currentSecondViewPos, cubePos)
+            
+                
+            if distanceFirst <= 1.0:
+                cube.remove()      
+                cubes.remove(cube)
+                pointCount2+= 3
+                additionalElement("cube")
+            elif distanceSecond <= 1.0:    
+                cube.remove()      
+                cubes.remove(cube)
+                pointCount3+= 3
+                additionalElement("cube")
+    else:
         return
-        
-    currentFirstViewPos = firstWindowView.getPosition()
-    currentSecondViewPos = secondWindowView.getPosition()
-        
-    for ball in balls[:]:
-        ballPos = ball.getPosition()
-        distanceFirst = vizmat.Distance(currentFirstViewPos, ballPos)
-        distanceSecond = vizmat.Distance(currentSecondViewPos, ballPos)
-            
-        if distanceFirst <= 1.0:
-            ball.remove()      
-            balls.remove(ball)
-        elif distanceSecond <= 1.0:    
-            ball.remove()      
-            balls.remove(ball)
-            
+                
             
 
             
 vizact.ontimer(0, checkDistance)
     
+   
         
+def additionalElement(elementType):
+    global balls, cylinders, cubes
+    xCoordinate = random.randint(-12, 12)
+    zCoordinate = random.randint(-12, 12)
+    if elementType == "ball":
     
+        ball = vizshape.addSphere(	 
+        radius = 1.0,	 
+        slices = 20, 
+        stacks = 20,	 
+        axis = vizshape.AXIS_Y	 
+        )
+        ball.setPosition(xCoordinate, 0.5, zCoordinate)
+        ball.setScale(0.5,0.5,0.5)
+        balls.append(ball)
+        ball.disable(viz.COLLISION)
+    elif elementType == "cylinder":
+        
+        cylinder = vizshape.addCylinder(	 
+        height = 1.0,	 
+        radius = 0.5,	 
+        topRadius = None,	 
+        bottomRadius = None, 
+        axis = vizshape.AXIS_Y,	 
+        slices = 20,	 
+        bottom = True,	 
+        top = True, 
+        )
+        cylinder.setPosition(xCoordinate, 0.5, zCoordinate)
+        cylinder.setScale(0.5,0.5,0.5)
+        cylinders.append(cylinder)
+        cylinder.disable(viz.COLLISION)
+    elif elementType == "cube":
+        
+        cube = vizshape.addCube(	 
+        size = 1	 
+        )
+        cube.setPosition(xCoordinate, 0.5, zCoordinate)
+        cube.setScale(0.5,0.5,0.5)
+        cubes.append(cube)
+        cube.disable(viz.COLLISION)
     
     
     
