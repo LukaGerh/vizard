@@ -42,6 +42,8 @@ pointCount3 = 0
 balls = []
 cylinders = []
 cubes = []
+gameTime = 10   
+gameActive = False
 
 
 
@@ -123,6 +125,10 @@ def validateInput(inputBox):
 def showOneWindow(nickname):
     panel.remove()
     
+    global gameActive
+    gameActive = True
+        
+    
     viz.MainView.collision(viz.ON)
     
     monitor = viz.window.getMonitorList()
@@ -131,7 +137,7 @@ def showOneWindow(nickname):
     textY = monitorTop - 30
     textX = monitorWidth - 30
     
-    global singlePlayer, pointCount
+    global singlePlayer, pointCount, gameTime
     
     singlePlayer = True
     
@@ -168,6 +174,59 @@ def showOneWindow(nickname):
         pointsCollected.message('Punkti: ' + str(pointCount))
         
     vizact.ontimer(0, collectedPoints)
+    
+    timerText = viz.addText(value = 'Laiks: ' + str(gameTime),	 
+        parent = viz.ORTHO, 
+        scene = viz.MainWindow	 
+    )
+    timerText.setPosition((textX+30)/2, (textY - 30))
+    timerText.alignment(viz.ALIGN_LEFT_TOP)
+    timerText.fontSize(
+            size = 30
+    )
+
+    
+    resultText = viz.addText("", viz.SCREEN)
+    resultText.setPosition(0.3, 0.5)
+    resultText.setScale(0.8, 0.8)
+    
+    def updateTimer():
+        global gameTime, gameActive
+    
+        if gameActive and gameTime > 0:
+            gameTime -= 1
+            timerText.message("Laiks: " + str(gameTime))
+        
+        if gameTime == 0:
+            viztask.schedule(endGame())
+
+
+    vizact.ontimer(1.0, updateTimer)
+    
+    def endGame():
+        global pointCount
+        
+        
+        message='Tavs rezultāts ir: ' + str(pointCount)
+        
+        viz.MainWindow.remove()
+        
+        panel = vizdlg.Panel(layout=vizdlg.LAYOUT_VERT_CENTER, align=vizdlg.ALIGN_CENTER, background=True, border=True, theme=None, drawOrder=1)
+        panel.setMinSize([1000, 600])
+        viz.link(viz.MainWindow.CenterCenter, panel)
+        
+        dialog = vizdlg.MessageDialog(message=message, title='Warning', accept='Yes', cancel='No')
+        dialog.setScreenAlignment(viz.ALIGN_CENTER)
+        panel.addItem(dialog)
+        while True:
+            yield dialog.show()
+
+            if dialog.accepted:
+                viz.quit()
+            else:
+                viz.quit()
+
+            yield viztask.waitTime(1)
     
     TURN_SPEED = 60
     
