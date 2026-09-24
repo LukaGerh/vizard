@@ -42,8 +42,10 @@ pointCount3 = 0
 balls = []
 cylinders = []
 cubes = []
-gameTime = 10   
+gameTime = 30  
 gameActive = False
+
+
 
 
 
@@ -125,7 +127,7 @@ def validateInput(inputBox):
 def showOneWindow(nickname):
     panel.remove()
     
-    global gameActive
+    global singlePlayer, pointCount, gameTime, gameActive, timerEvent
     gameActive = True
         
     
@@ -137,7 +139,7 @@ def showOneWindow(nickname):
     textY = monitorTop - 30
     textX = monitorWidth - 30
     
-    global singlePlayer, pointCount, gameTime
+    
     
     singlePlayer = True
     
@@ -184,38 +186,43 @@ def showOneWindow(nickname):
     timerText.fontSize(
             size = 30
     )
-
-    
-    resultText = viz.addText("", viz.SCREEN)
-    resultText.setPosition(0.3, 0.5)
-    resultText.setScale(0.8, 0.8)
+    timerText.color(0, 0, 0)
+ 
     
     def updateTimer():
-        global gameTime, gameActive
+        global gameTime, gameActive, timerEvent
     
         if gameActive and gameTime > 0:
             gameTime -= 1
             timerText.message("Laiks: " + str(gameTime))
         
         if gameTime == 0:
+            
+            timerEvent.remove()
+            
             viztask.schedule(endGame())
-
-
-    vizact.ontimer(1.0, updateTimer)
+            
+        
+    
+    
+    timerEvent = vizact.ontimer(1.0, updateTimer)
+        
     
     def endGame():
-        global pointCount
-        
+        global pointCount, gameActive
+        gameActive = False
         
         message='Tavs rezultāts ir: ' + str(pointCount)
         
-        viz.MainWindow.remove()
+        viz.MainView.collision(viz.OFF)
+        viz.MainView.setPosition([0, 1000, 0])
         
         panel = vizdlg.Panel(layout=vizdlg.LAYOUT_VERT_CENTER, align=vizdlg.ALIGN_CENTER, background=True, border=True, theme=None, drawOrder=1)
         panel.setMinSize([1000, 600])
         viz.link(viz.MainWindow.CenterCenter, panel)
+        panel.color([205/255.0, 20/255.0, 20/255.0, 0.8])
         
-        dialog = vizdlg.MessageDialog(message=message, title='Warning', accept='Yes', cancel='No')
+        dialog = vizdlg.MessageDialog(message=message, title='Punkti', accept='Labi', cancel='Arī labi')
         dialog.setScreenAlignment(viz.ALIGN_CENTER)
         panel.addItem(dialog)
         while True:
@@ -231,6 +238,11 @@ def showOneWindow(nickname):
     TURN_SPEED = 60
     
     def update_main_view():
+        global gameActive
+        
+        
+        if not gameActive:
+            return
         if viz.key.isDown('d'):
             viz.MainView.setEuler([TURN_SPEED * viz.elapsed(), 0, 0], viz.BODY_ORI, viz.REL_PARENT)
         elif viz.key.isDown('a'):
@@ -239,11 +251,12 @@ def showOneWindow(nickname):
             viz.MainView.setEuler([TURN_SPEED * viz.elapsed(), 0, 0], viz.BODY_ORI, viz.REL_PARENT)
         elif viz.key.isDown(viz.KEY_LEFT):
             viz.MainView.setEuler([-TURN_SPEED * viz.elapsed(), 0, 0], viz.BODY_ORI, viz.REL_PARENT)
-        
+    
+       
     vizact.whilekeydown('w', viz.MainView.move, [0, 0, 0.1])
     vizact.whilekeydown('s', viz.MainView.move, [0, 0, -0.1])
 
-   
+           
     vizact.whilekeydown(viz.KEY_UP, viz.MainView.move, [0, 0, 0.1])
     vizact.whilekeydown(viz.KEY_DOWN, viz.MainView.move, [0, 0, -0.1])
     
@@ -254,6 +267,8 @@ def showOneWindow(nickname):
 def showTwoWindows(nickname1, nickname2):
     panel.remove()
     
+    
+    
     monitor = viz.window.getMonitorList()
     monitorTop = monitor[0].size[1]
     monitorWidth = monitor[0].size[0] / 2
@@ -263,10 +278,14 @@ def showTwoWindows(nickname1, nickname2):
     
     
     
-    global multiPlayer, pointCount2, pointCount3
+    global multiPlayer, pointCount2, pointCount3, gameActive, gameTime, timerEvent, firstWindow, secondWindow
+    gameActive = True
     multiPlayer = True
+    gameTime = 30
        	
     global firstWindowView, secondWindowView
+   
+    
     firstWindowView = viz.addView()
     firstWindowView.setPosition([0, 0.5, 0], mode=viz.REL_PARENT)
     firstWindow = viz.addWindow()
@@ -283,6 +302,8 @@ def showTwoWindows(nickname1, nickname2):
     secondWindow.setPosition( 0.5, 1 )
     secondWindow.setView(secondWindowView)
     
+    firstWindowView.collision(viz.ON)
+    secondWindowView.collision(viz.ON)
     
     playerLabel = viz.addText(	 
         value = 'Spēlētājs: ' + nickname1,	 
@@ -311,7 +332,68 @@ def showTwoWindows(nickname1, nickname2):
     playerLabel2.color(0, 0, 0)
     
     
+    timerText1 = viz.addText(value='Laiks: ' + str(gameTime), parent=viz.ORTHO, scene=firstWindow)
+    timerText1.setPosition((textX + 30) / 2, (textY - 30))
+    timerText1.alignment(viz.ALIGN_LEFT_TOP)
+    timerText1.fontSize(size=30)
+    timerText1.color(0, 0, 0)
+
+    timerText2 = viz.addText(value='Laiks: ' + str(gameTime), parent=viz.ORTHO, scene=secondWindow)
+    timerText2.setPosition((textX + 30) / 2, (textY - 30))
+    timerText2.alignment(viz.ALIGN_LEFT_TOP)
+    timerText2.fontSize(size=30)
+    timerText2.color(0, 0, 0)
     
+    
+    def updateTimerMulti():
+        global gameTime, gameActive, timerEvent
+        if gameActive and gameTime > 0:
+            gameTime -= 1
+            timerText1.message("Laiks: " + str(gameTime))
+            timerText2.message("Laiks: " + str(gameTime))
+
+        if gameTime == 0:
+            timerEvent.remove()
+            viztask.schedule(endGameMulti())
+    
+    timerEvent = vizact.ontimer(1.0, updateTimerMulti)
+    
+    def endGameMulti():
+        global pointCount2, pointCount3, gameActive
+        gameActive = False
+        
+        firstWindowView.collision(viz.OFF)
+        secondWindowView.collision(viz.OFF)
+        
+        if pointCount2 > pointCount3:
+            winnerMessage = nickname1 + ' uzvarēja ar ' + str(pointCount2) + ' punktiem!'
+        elif pointCount3 > pointCount2:
+            winnerMessage = nickname2 + ' uzvarēja ar ' + str(pointCount3) + ' punktiem!'
+        else:
+            winnerMessage = 'Neizšķirts! Abiem ir ' + str(pointCount2) + ' punkti.'
+
+        
+        firstWindowView.setPosition([0, 1000, 0])
+        secondWindowView.setPosition([0, 1000, 0])
+
+        
+        resultText1 = viz.addText(winnerMessage, parent=viz.ORTHO, scene=firstWindow)
+        resultText1.fontSize(25)
+        resultText1.alignment(viz.ALIGN_CENTER)
+        resultText1.setPosition(textX / 2, textY / 2)
+
+        
+        resultText2 = viz.addText(winnerMessage, parent=viz.ORTHO, scene=secondWindow)
+        resultText2.fontSize(25)
+        resultText2.alignment(viz.ALIGN_CENTER)
+        resultText2.setPosition(textX / 2, textY / 2)
+
+        
+        dialog = vizdlg.MessageDialog(message='Spēle beigusies!', title='Rezultāts', accept='Iziet')
+        yield dialog.show()
+        viz.quit()
+                    
+            
     
     pointsCollected = viz.addText(
         value = 'Punkti: ' + str(pointCount2),	 
@@ -342,6 +424,8 @@ def showTwoWindows(nickname1, nickname2):
         pointsCollected2.message('Punkti: ' + str(pointCount3))
         
     vizact.ontimer(0, collectedPoints)
+    
+    
     
     
     TURN_SPEED = 60
@@ -486,11 +570,12 @@ def createObjects():
                 )
                 ball.setPosition(xCoordinate, 0.5, zCoordinate)
                 ball.setScale(0.5,0.5,0.5)
+                ball.color(0, 0, 0)
                 balls.append(ball)
                 ball.disable(viz.COLLISION)
         for i in range(2):
-                xCoordinate = random.randint(-12, 12)  # <-- PIEVIENOT ŠO
-                zCoordinate = random.randint(-12, 12)  # <-- PIEVIENOT ŠO
+                xCoordinate = random.randint(-12, 12)  
+                zCoordinate = random.randint(-12, 12) 
                 cylinder = vizshape.addCylinder(	 
                 height = 1.0,	 
                 radius = 0.5,	 
@@ -501,8 +586,9 @@ def createObjects():
                 bottom = True,	 
                 top = True, 
                 )
-                cylinder.setPosition(xCoordinate, 0.5, zCoordinate)
+                cylinder.setPosition(xCoordinate, 0.4, zCoordinate)
                 cylinder.setScale(0.5,0.5,0.5)
+                cylinder.color(0, 0, 0)
                 cylinders.append(cylinder)
                 cylinder.disable(viz.COLLISION)
         for i in range(1):
@@ -513,6 +599,7 @@ def createObjects():
                 )
                 cube.setPosition(xCoordinate, 0.5, zCoordinate)
                 cube.setScale(0.5,0.5,0.5)
+                cube.color(0, 0, 0)
                 cubes.append(cube)
                 cube.disable(viz.COLLISION)
     
@@ -522,7 +609,10 @@ def createObjects():
        
         
 def checkDistance():
-    global singlePlayer, multiPlayer, firstWindowView, secondWindowView, pointCount, pointCount2, pointCount3, balls, cylinders, cubes
+    global singlePlayer, multiPlayer, firstWindowView, secondWindowView, pointCount, pointCount2, pointCount3, balls, cylinders, cubes, gameActive
+    
+    if not gameActive:
+        return
     
     if singlePlayer == True: 
         mainViewPos = viz.MainView.getPosition()
@@ -531,6 +621,8 @@ def checkDistance():
             ballPos = ball.getPosition()
             distanceMain = vizmat.Distance(mainViewPos, ballPos)
             if distanceMain <= 1.0:
+                sound = viz.addAudio('collectsound.mp3') 
+                sound.play()
                 pointCount += 1
                 ball.remove()      
                 balls.remove(ball)
@@ -541,6 +633,8 @@ def checkDistance():
             cylinderPos = cylinder.getPosition()
             distanceMain = vizmat.Distance(mainViewPos, cylinderPos)
             if distanceMain <= 1.0:
+                sound = viz.addAudio('collectsound.mp3') 
+                sound.play()
                 pointCount += 2
                 cylinder.remove()      
                 cylinders.remove(cylinder)
@@ -551,6 +645,8 @@ def checkDistance():
             cubePos = cube.getPosition()
             distanceMain = vizmat.Distance(mainViewPos, cubePos)
             if distanceMain <= 1.0:
+                sound = viz.addAudio('collectsound.mp3') 
+                sound.play()
                 pointCount += 3
                 cube.remove()      
                 cubes.remove(cube)
@@ -571,11 +667,15 @@ def checkDistance():
             
                 
             if distanceFirst <= 1.0:
+                sound = viz.addAudio('collectsound.mp3') 
+                sound.play()
                 ball.remove()      
                 balls.remove(ball)
                 pointCount2+= 1
                 additionalElement("ball")
-            elif distanceSecond <= 1.0:    
+            elif distanceSecond <= 1.0: 
+                sound = viz.addAudio('collectsound.mp3') 
+                sound.play()
                 ball.remove()      
                 balls.remove(ball)
                 pointCount3+= 1
@@ -588,11 +688,15 @@ def checkDistance():
             
                 
             if distanceFirst <= 1.0:
+                sound = viz.addAudio('collectsound.mp3') 
+                sound.play()
                 cylinder.remove()      
-                cylinders.remove("cylinder")
+                cylinders.remove(cylinder)
                 pointCount2+= 2
-                additionalElement("cylinder")
-            elif distanceSecond <= 1.0:    
+                additionalElement(cylinder)
+            elif distanceSecond <= 1.0:
+                sound = viz.addAudio('collectsound.mp3') 
+                sound.play()
                 cylinder.remove()      
                 cylinders.remove(cylinder)
                 pointCount3+= 2
@@ -605,11 +709,15 @@ def checkDistance():
             
                 
             if distanceFirst <= 1.0:
+                sound = viz.addAudio('collectsound.mp3') 
+                sound.play()
                 cube.remove()      
                 cubes.remove(cube)
                 pointCount2+= 3
                 additionalElement("cube")
-            elif distanceSecond <= 1.0:    
+            elif distanceSecond <= 1.0:
+                sound = viz.addAudio('collectsound.mp3') 
+                sound.play()
                 cube.remove()      
                 cubes.remove(cube)
                 pointCount3+= 3
@@ -638,6 +746,7 @@ def additionalElement(elementType):
         )
         ball.setPosition(xCoordinate, 0.5, zCoordinate)
         ball.setScale(0.5,0.5,0.5)
+        ball.color(0, 0, 0)
         balls.append(ball)
         ball.disable(viz.COLLISION)
     elif elementType == "cylinder":
@@ -654,6 +763,7 @@ def additionalElement(elementType):
         )
         cylinder.setPosition(xCoordinate, 0.5, zCoordinate)
         cylinder.setScale(0.5,0.5,0.5)
+        cylinder.color(0, 0, 0)
         cylinders.append(cylinder)
         cylinder.disable(viz.COLLISION)
     elif elementType == "cube":
@@ -663,6 +773,7 @@ def additionalElement(elementType):
         )
         cube.setPosition(xCoordinate, 0.5, zCoordinate)
         cube.setScale(0.5,0.5,0.5)
+        cube.color(0, 0, 0)
         cubes.append(cube)
         cube.disable(viz.COLLISION)
     
